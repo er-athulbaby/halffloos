@@ -1,7 +1,10 @@
-# Surplus Food Marketplace — Bahrain
+# Halffloos — Bahrain Surplus Food Marketplace
 
 **Date:** 2026-09-17
 **Status:** Design approved, not yet implemented
+
+Name: *Halffloos* — English "half" plus Arabic **فلوس** (*floos*, money).
+Repository: https://github.com/er-athulbaby/halffloos
 
 ## Problem
 

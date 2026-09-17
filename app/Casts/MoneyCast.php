@@ -3,6 +3,7 @@
 namespace App\Casts;
 
 use App\Support\Money;
+use InvalidArgumentException;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,6 +18,10 @@ class MoneyCast implements CastsAttributes
     {
         if ($value === null) {
             return null;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            throw new InvalidArgumentException("Money must be set via Money::fromFils() or Money::fromString(), not raw int/float. Received: {$value}");
         }
 
         return $value instanceof Money ? $value->fils() : Money::fromString((string) $value)->fils();

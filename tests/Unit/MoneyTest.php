@@ -46,4 +46,18 @@ class MoneyTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         Money::fromFils(-1);
     }
+
+    public function test_it_floors_non_exact_percentages(): void
+    {
+        $this->assertSame(33, Money::fromFils(667)->percentOffFrom(Money::fromFils(1000)));
+    }
+
+    public function test_money_cast_rejects_raw_int(): void
+    {
+        $cast = new \App\Casts\MoneyCast();
+        $model = \Mockery::mock(\Illuminate\Database\Eloquent\Model::class);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $cast->set($model, 'price', 2500, []);
+    }
 }

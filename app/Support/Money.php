@@ -53,6 +53,6 @@ final readonly class Money
             return 0;
         }
 
-        return (int) floor((($original->fils - $this->fils) / $original->fils) * 100);
+        return intdiv(($original->fils - $this->fils) * 100, $original->fils);
     }
 }

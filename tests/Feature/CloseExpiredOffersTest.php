@@ -116,4 +116,30 @@ class CloseExpiredOffersTest extends TestCase
         $this->assertSame(ReservationStatus::Collected, $reservation->fresh()->status);
         $this->assertSame(0, $customer->fresh()->no_show_count);
     }
+
+    // The customer is still at the till. Striking them here costs them half of a
+    // seven-day block for arriving on time.
+    public function test_it_leaves_an_offer_inside_the_grace_period_alone(): void
+    {
+        [$offer, $reservation, $customer] = $this->expiredOfferWithReservation();
+        $offer->update(['pickup_end' => now()->subMinutes(10)]);
+
+        $this->artisan('halffloos:close-expired')->assertSuccessful();
+
+        $this->assertSame(OfferStatus::Active, $offer->fresh()->status);
+        $this->assertSame(ReservationStatus::Reserved, $reservation->fresh()->status);
+        $this->assertSame(0, $customer->fresh()->no_show_count);
+    }
+
+    public function test_it_sweeps_once_the_grace_period_has_passed(): void
+    {
+        [$offer, $reservation, $customer] = $this->expiredOfferWithReservation();
+        $offer->update(['pickup_end' => now()->subMinutes(45)]);
+
+        $this->artisan('halffloos:close-expired')->assertSuccessful();
+
+        $this->assertSame(OfferStatus::Closed, $offer->fresh()->status);
+        $this->assertSame(ReservationStatus::NoShow, $reservation->fresh()->status);
+        $this->assertSame(1, $customer->fresh()->no_show_count);
+    }
 }

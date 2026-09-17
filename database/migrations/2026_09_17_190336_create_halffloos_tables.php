@@ -65,6 +65,12 @@ return new class extends Migration
         // Laravel has no fluent check-constraint builder, so this is raw SQL.
         // Two triggers (insert + update) so an edit can never push price past
         // the floor once the edit UI ships.
+        //
+        // RAISE(ABORT, ...) IS SQLITE-ONLY. This migration will not run against
+        // production MySQL. Do not "fix" that by deleting these statements —
+        // that silently removes the 50% floor from the database. Replace them
+        // with the CHECK constraint in DEPLOYMENT.md before the first MySQL
+        // deploy. Note `>` here, not `>=`: exactly half is a valid listing.
         DB::statement(
             'CREATE TRIGGER offers_half_off_insert BEFORE INSERT ON offers
              FOR EACH ROW BEGIN

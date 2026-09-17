@@ -72,11 +72,27 @@ class ReserveOffer
         });
     }
 
+    /**
+     * Scoped to the store, not the offer, because that is how the code is
+     * redeemed: CollectReservation looks up store + code. Two live offers in
+     * the same shop sharing a code would let the merchant mark the wrong
+     * customer collected and refuse the right one.
+     *
+     * Only `reserved` rows collide. Once a reservation is collected, cancelled
+     * or a no-show its code is dead and free to reissue — which is also why the
+     * unique index stays on (offer_id, pickup_code) rather than tightening.
+     */
     private function uniqueCodeFor(Offer $offer): string
     {
         do {
             $code = PickupCode::generate();
-        } while ($offer->reservations()->where('pickup_code', $code)->exists());
+        } while (
+            Reservation::query()
+                ->where('pickup_code', $code)
+                ->where('status', ReservationStatus::Reserved)
+                ->whereRelation('offer', 'store_id', $offer->store_id)
+                ->exists()
+        );
 
         return $code;
     }

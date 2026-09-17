@@ -10,6 +10,7 @@ use App\Enums\StoreStatus;
 use App\Enums\UserRole;
 use App\Exceptions\ReservationFailed;
 use App\Models\Offer;
+use App\Models\Reservation;
 use App\Models\Store;
 use App\Models\User;
 use App\Support\Money;
@@ -66,6 +67,56 @@ class ReserveOfferTest extends TestCase
             'pickup_end' => now()->addHour(),
             'status' => OfferStatus::Active,
         ]);
+    }
+
+    private function siblingOfferAt(Offer $offer): Offer
+    {
+        return Offer::create([
+            'store_id' => $offer->store_id,
+            'type' => OfferType::Item,
+            'title' => 'Yoghurt 500g',
+            'retail_value_fils' => Money::fromString('2.000'),
+            'price_fils' => Money::fromString('0.500'),
+            'quantity' => 100,
+            'remaining' => 100,
+            'max_per_customer' => 1,
+            'expires_on' => now()->addDay()->toDateString(),
+            'pickup_start' => now()->subHour(),
+            'pickup_end' => now()->addHour(),
+            'status' => OfferStatus::Active,
+        ]);
+    }
+
+    // Codes are redeemed by store + code, so a code live on a sibling offer in
+    // the same shop would let the merchant collect the wrong customer.
+    //
+    // Like the overselling test below, this is a smoke test rather than the
+    // correctness argument: with a 31-character alphabet and six places, an
+    // unscoped generator would still miss 'TAKEN9' almost every time. What
+    // actually holds the invariant is the store-scoped exists() check in
+    // ReserveOffer::uniqueCodeFor.
+    public function test_it_never_reissues_a_code_live_at_the_same_store(): void
+    {
+        $offer = $this->offer(remaining: 100, maxPerCustomer: 1);
+        $sibling = $this->siblingOfferAt($offer);
+
+        Reservation::create([
+            'offer_id' => $offer->id,
+            'user_id' => $this->customer('held@example.test')->id,
+            'qty' => 1,
+            'pickup_code' => 'TAKEN9',
+            'status' => ReservationStatus::Reserved,
+        ]);
+
+        for ($i = 0; $i < 25; $i++) {
+            $reservation = (new ReserveOffer)->handle(
+                $sibling->fresh(),
+                $this->customer("r{$i}@example.test"),
+                1
+            );
+
+            $this->assertNotSame('TAKEN9', $reservation->pickup_code);
+        }
     }
 
     public function test_it_reserves_and_decrements_stock(): void

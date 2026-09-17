@@ -25,4 +25,14 @@ class ReservationFailed extends RuntimeException
     {
         return new self(__('This offer is no longer available.'));
     }
+
+    public static function unknownCode(): self
+    {
+        return new self(__('No reservation found for that code.'));
+    }
+
+    public static function alreadyCollected(): self
+    {
+        return new self(__('That code was already collected.'));
+    }
 }

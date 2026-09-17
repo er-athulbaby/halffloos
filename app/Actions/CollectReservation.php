@@ -11,10 +11,13 @@ class CollectReservation
 {
     public function handle(Store $store, string $code): Reservation
     {
-        $reservation = Reservation::query()
+        $candidates = Reservation::query()
             ->whereRelation('offer', 'store_id', $store->id)
             ->where('pickup_code', strtoupper(trim($code)))
-            ->first();
+            ->get();
+
+        $reservation = $candidates->firstWhere('status', ReservationStatus::Reserved)
+            ?? $candidates->first();
 
         if (! $reservation) {
             throw ReservationFailed::unknownCode();

@@ -4,7 +4,10 @@
 win over this file. If no page file exists, these rules apply.
 
 **Date:** 2026-09-17
-**Stack:** Laravel + Livewire + Tailwind, delivered as an installable PWA
+**Stack:** Laravel 13 + Livewire 4 + Tailwind 4, delivered as an installable PWA
+
+> Tailwind 4 is CSS-first. The token block in section 3 goes in an `@theme` block
+> in your stylesheet, not in a `tailwind.config.js` — v4 doesn't generate one.
 
 > Sourced from the ui-ux-pro-max catalog by reading `data/*.csv` directly. The
 > skill's ranking script requires Python, which is not installed on this machine,

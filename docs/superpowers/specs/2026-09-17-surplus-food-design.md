@@ -254,8 +254,26 @@ Bengali and Tagalog are deferred until users ask.
 
 ## Stack
 
-- Laravel, Livewire, Tailwind
-- MySQL 8 / MariaDB
+Versions verified against Packagist and npm on 2026-09-17:
+
+| Component | Version | Note |
+|---|---|---|
+| PHP | 8.5.0 | Installed via `php.new`, at `~/.config/herd-lite/bin` |
+| Composer | 2.8.12 | Bundled with the same installer |
+| Node | 24.19.0 | Already present |
+| laravel/framework | 13.x | Latest 13.32.0 |
+| livewire/livewire | 4.x | Latest 4.4.5 — major version, not v3 |
+| tailwindcss | 4.x | Latest 4.3.3 — CSS-first config via `@theme`, no `tailwind.config.js` |
+| vite | 8.x | Latest 8.3.0 |
+
+- **SQLite in development, MySQL in production.** `pdo_sqlite` and `pdo_mysql` are
+  both present. SQLite is Laravel's default, is a single file, and removes the need
+  to install a database server locally. Switching is a config change.
+- **No `gd`, `imagick` or `intl`.** This PHP build is static with no extensions
+  directory, so they cannot be enabled. Consequences: merchant photos are resized
+  **in the browser before upload** — which is better regardless, since nobody should
+  push a 4MB phone photo over Bahraini mobile data — and BHD is formatted by hand
+  from integer fils rather than through `NumberFormatter`.
 - Installable PWA, with a `share_target` entry if link-sharing is ever wanted
 - Web Push for "new offers near you"
 - Database queue driver and the Laravel scheduler for window closing and no-show

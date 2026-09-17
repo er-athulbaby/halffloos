@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\StoreStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,7 @@ class Store extends Model
             'status' => StoreStatus::class,
             'verified_at' => 'datetime',
             'delivers' => 'boolean',
+            'delivery_fee_fils' => MoneyCast::class,
             'lat' => 'float',
             'lng' => 'float',
         ];

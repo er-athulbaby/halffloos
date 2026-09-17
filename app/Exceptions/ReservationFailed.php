@@ -31,6 +31,11 @@ class ReservationFailed extends RuntimeException
         return new self(__('No reservation found for that code.'));
     }
 
+    public static function notYours(): self
+    {
+        return new self(__('That reservation belongs to someone else.'));
+    }
+
     public static function alreadyCollected(): self
     {
         return new self(__('That code was already collected.'));

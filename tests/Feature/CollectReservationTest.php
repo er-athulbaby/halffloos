@@ -166,7 +166,7 @@ class CollectReservationTest extends TestCase
             'offer_id' => $offerA->id,
             'user_id' => $customer->id,
             'qty' => 1,
-            'pickup_code' => 'SHADOW1',
+            'pickup_code' => 'SHADW7',
             'status' => ReservationStatus::Collected,
             'collected_at' => now()->subDay(),
         ]);
@@ -175,11 +175,11 @@ class CollectReservationTest extends TestCase
             'offer_id' => $offerB->id,
             'user_id' => $customer->id,
             'qty' => 1,
-            'pickup_code' => 'SHADOW1',
+            'pickup_code' => 'SHADW7',
             'status' => ReservationStatus::Reserved,
         ]);
 
-        $collected = (new CollectReservation)->handle($this->store, 'SHADOW1');
+        $collected = (new CollectReservation)->handle($this->store, 'SHADW7');
 
         $this->assertSame($liveReserved->id, $collected->id);
         $this->assertSame(ReservationStatus::Collected, $collected->status);

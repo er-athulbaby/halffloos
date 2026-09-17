@@ -86,6 +86,29 @@ class SchemaTest extends TestCase
         ]);
     }
 
+    // The boundary itself: 50% is a floor, not a threshold to clear. Every other
+    // fixture is 75% off, so flipping either trigger to `>=` would leave the rest
+    // of the suite green while rejecting every genuine half-price listing.
+    public function test_the_database_accepts_a_discount_of_exactly_fifty_percent(): void
+    {
+        $offer = Offer::create([
+            'store_id' => $this->makeStore()->id,
+            'type' => OfferType::Item,
+            'title' => 'Exactly half price milk',
+            'retail_value_fils' => Money::fromString('2.000'),
+            'price_fils' => Money::fromString('1.000'),
+            'quantity' => 10,
+            'remaining' => 10,
+            'max_per_customer' => 2,
+            'expires_on' => now()->addDay()->toDateString(),
+            'pickup_start' => now()->setTime(20, 0),
+            'pickup_end' => now()->setTime(22, 0),
+            'status' => OfferStatus::Active,
+        ]);
+
+        $this->assertSame(1000, $offer->fresh()->price_fils->fils());
+    }
+
     public function test_the_database_rejects_an_update_that_breaches_fifty_percent(): void
     {
         $offer = $this->makeOffer($this->makeStore());

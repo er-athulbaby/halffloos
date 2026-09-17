@@ -146,6 +146,26 @@ class ReserveOfferTest extends TestCase
         (new ReserveOffer)->handle($offer, $user, 1);
     }
 
+    public function test_it_refuses_a_closed_offer(): void
+    {
+        $offer = $this->offer();
+        $offer->update(['status' => OfferStatus::Closed]);
+
+        $this->expectException(ReservationFailed::class);
+
+        (new ReserveOffer)->handle($offer->fresh(), $this->customer(), 1);
+    }
+
+    public function test_it_refuses_an_offer_whose_pickup_window_has_passed(): void
+    {
+        $offer = $this->offer();
+        $offer->update(['pickup_end' => now()->subMinute()]);
+
+        $this->expectException(ReservationFailed::class);
+
+        (new ReserveOffer)->handle($offer->fresh(), $this->customer(), 1);
+    }
+
     // This exercises the stock-race guard sequentially, not concurrently:
     // PHP cannot reproduce true concurrent requests in-process, so three
     // reservations are simply made one after another until stock runs out.

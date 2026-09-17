@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\ReserveOffer;
 use App\Enums\OfferStatus;
 use App\Enums\OfferType;
+use App\Enums\ReservationStatus;
 use App\Enums\StoreStatus;
 use App\Enums\UserRole;
 use App\Exceptions\ReservationFailed;
@@ -13,6 +14,7 @@ use App\Models\Store;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class ReserveOfferTest extends TestCase
@@ -105,6 +107,34 @@ class ReserveOfferTest extends TestCase
         $this->assertSame(OfferStatus::SoldOut, $offer->fresh()->status);
     }
 
+    public function test_it_rejects_a_non_positive_qty(): void
+    {
+        $offer = $this->offer();
+        $user = $this->customer();
+
+        foreach ([0, -1] as $badQty) {
+            try {
+                (new ReserveOffer)->handle($offer, $user, $badQty);
+                $this->fail("Expected InvalidArgumentException for qty={$badQty}");
+            } catch (InvalidArgumentException $e) {
+                $this->assertNotEmpty($e->getMessage());
+            }
+        }
+    }
+
+    public function test_collecting_a_reservation_does_not_free_the_cap(): void
+    {
+        $offer = $this->offer(remaining: 100, maxPerCustomer: 2);
+        $user = $this->customer();
+
+        $reservation = (new ReserveOffer)->handle($offer, $user, 2);
+        $reservation->update(['status' => ReservationStatus::Collected]);
+
+        $this->expectException(ReservationFailed::class);
+
+        (new ReserveOffer)->handle($offer, $user, 1);
+    }
+
     public function test_it_refuses_a_blocked_user(): void
     {
         $offer = $this->offer();
@@ -129,7 +159,7 @@ class ReserveOfferTest extends TestCase
 
         $succeeded = 0;
 
-        foreach (['a', 'b', 'c'] as $i => $letter) {
+        foreach (['a', 'b', 'c'] as $letter) {
             try {
                 (new ReserveOffer)->handle($offer, $this->customer("{$letter}@example.test"), 2);
                 $succeeded++;

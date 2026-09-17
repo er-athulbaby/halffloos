@@ -10,11 +10,16 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Support\PickupCode;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class ReserveOffer
 {
     public function handle(Offer $offer, User $user, int $qty): Reservation
     {
+        if ($qty < 1) {
+            throw new InvalidArgumentException("qty must be at least 1, got {$qty}.");
+        }
+
         if ($user->blocked_until && $user->blocked_until->isFuture()) {
             throw ReservationFailed::blocked();
         }
@@ -23,39 +28,48 @@ class ReserveOffer
             throw ReservationFailed::notAvailable();
         }
 
+        // Collected and no-show reservations still count against the cap —
+        // only a cancellation returns stock, so only a cancellation should
+        // return the customer's allowance.
         $alreadyHeld = $offer->reservations()
             ->where('user_id', $user->id)
-            ->where('status', ReservationStatus::Reserved)
+            ->whereIn('status', [
+                ReservationStatus::Reserved,
+                ReservationStatus::Collected,
+                ReservationStatus::NoShow,
+            ])
             ->sum('qty');
 
         if ($alreadyHeld + $qty > $offer->max_per_customer) {
             throw ReservationFailed::overCap($offer->max_per_customer);
         }
 
-        // The whole concurrency story: one conditional UPDATE. Zero affected
-        // rows means someone else took the last of the stock first.
-        $claimed = DB::table('offers')
-            ->where('id', $offer->id)
-            ->where('remaining', '>=', $qty)
-            ->decrement('remaining', $qty);
+        return DB::transaction(function () use ($offer, $user, $qty) {
+            // The whole concurrency story: one conditional UPDATE. Zero affected
+            // rows means someone else took the last of the stock first.
+            $claimed = DB::table('offers')
+                ->where('id', $offer->id)
+                ->where('remaining', '>=', $qty)
+                ->decrement('remaining', $qty);
 
-        if ($claimed === 0) {
-            throw ReservationFailed::soldOut();
-        }
+            if ($claimed === 0) {
+                throw ReservationFailed::soldOut();
+            }
 
-        $reservation = Reservation::create([
-            'offer_id' => $offer->id,
-            'user_id' => $user->id,
-            'qty' => $qty,
-            'pickup_code' => $this->uniqueCodeFor($offer),
-            'status' => ReservationStatus::Reserved,
-        ]);
+            $reservation = Reservation::create([
+                'offer_id' => $offer->id,
+                'user_id' => $user->id,
+                'qty' => $qty,
+                'pickup_code' => $this->uniqueCodeFor($offer),
+                'status' => ReservationStatus::Reserved,
+            ]);
 
-        if ($offer->fresh()->remaining === 0) {
-            $offer->update(['status' => OfferStatus::SoldOut]);
-        }
+            if ($offer->fresh()->remaining === 0) {
+                $offer->update(['status' => OfferStatus::SoldOut]);
+            }
 
-        return $reservation;
+            return $reservation;
+        });
     }
 
     private function uniqueCodeFor(Offer $offer): string

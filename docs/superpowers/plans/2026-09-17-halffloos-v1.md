@@ -116,7 +116,10 @@ php /c/Users/ababy/.config/herd-lite/bin/composer.phar require livewire/livewire
 npm install tailwindcss @tailwindcss/vite
 ```
 
-Replace the contents of `resources/css/app.css` with:
+Add the `@theme` block below to `resources/css/app.css`, **keeping the `@source`
+directives the installer generated**. Dropping them stops Tailwind scanning vendor
+Blade views, so Livewire and pagination markup renders unstyled. Replace only the
+installer's default font stack, not the whole file.
 
 ```css
 @import "tailwindcss";
@@ -313,7 +316,9 @@ final readonly class Money
             return 0;
         }
 
-        return (int) floor((($original->fils - $this->fils) / $original->fils) * 100);
+        // intdiv, not float division — the "no floats" constraint is binding,
+        // and this gives identical floor semantics with exact arithmetic.
+        return intdiv(($original->fils - $this->fils) * 100, $original->fils);
     }
 }
 ```

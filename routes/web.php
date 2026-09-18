@@ -19,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::view('/browse', 'customer.browse')->name('browse');
+    Route::view('/my-codes', 'customer.reservations')->name('reservations');
 
     // Approval is checked in each component's mount(), where the store is
     // resolved anyway -- two routes do not warrant a middleware class.

@@ -6,8 +6,8 @@ namespace App\Enums;
  * Raw meat, poultry and fish are deliberately absent. Near-expiry raw protein
  * with a pickup window and no controlled cold chain is the highest-liability
  * category in the system, and the spec excludes it from v1. Until this enum
- * gained a case for it, that exclusion was only a policy a human applied at
- * approval time — now nothing can be listed under it at all.
+ * existed that exclusion was only a policy a human applied at approval time —
+ * now nothing can be listed under it at all.
  */
 enum OfferCategory: string
 {
@@ -30,16 +30,33 @@ enum OfferCategory: string
         };
     }
 
-    /** Inline SVG path data — never emoji, which renders inconsistently on Android. */
+    /** Phosphor icon name, resolved by the <x-icon> component. */
     public function icon(): string
     {
         return match ($this) {
-            self::Bakery => 'M4 18h16M5 18a7 7 0 0 1 14 0M8 11V8M12 11V7M16 11V8',
-            self::Dairy => 'M9 3h6l-1 3v2l2 4v9H8v-9l2-4V6L9 3zM8 15h8',
-            self::Produce => 'M12 8a5 5 0 1 0 0 12 5 5 0 0 0 0-12zM12 8V5a3 3 0 0 1 3-3',
-            self::Meals => 'M3 11h18M5 11a7 7 0 0 1 14 0M2 15h20M7 7V4M11 7V4',
-            self::Pantry => 'M4 7h16v13H4zM4 7l2-3h12l2 3M9 12h6',
-            self::Drinks => 'M6 3h12l-2 8v10H8V11L6 3zM7 7h10',
+            self::Bakery => 'bread',
+            self::Dairy => 'cheese',
+            self::Produce => 'avocado',
+            self::Meals => 'bowl-food',
+            self::Pantry => 'jar',
+            self::Drinks => 'coffee',
+        };
+    }
+
+    /**
+     * Tint for the placeholder art shown when an offer has no photograph.
+     * Distinct hues make a list scannable at a glance without relying on the
+     * text, and a deliberate tinted glyph reads as designed rather than broken.
+     */
+    public function tint(): string
+    {
+        return match ($this) {
+            self::Bakery => 'bg-amber-100 text-amber-700',
+            self::Dairy => 'bg-sky-100 text-sky-700',
+            self::Produce => 'bg-lime-100 text-lime-700',
+            self::Meals => 'bg-orange-100 text-orange-700',
+            self::Pantry => 'bg-stone-100 text-stone-600',
+            self::Drinks => 'bg-violet-100 text-violet-700',
         };
     }
 }

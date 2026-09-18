@@ -231,6 +231,66 @@ class CustomerFlowTest extends TestCase
         );
     }
 
+    public function test_my_codes_shows_a_live_pickup_code(): void
+    {
+        $offer = $this->offer($this->store());
+        $this->actingAs($this->customer());
+
+        $code = Livewire::test('customer.browse')
+            ->call('reserve', $offer->id, 1)
+            ->get('reservedCode');
+
+        Livewire::test('customer.reservations')
+            ->assertSee($code)
+            ->assertSee('Fresh milk 1L');
+    }
+
+    public function test_my_codes_never_shows_someone_elses_reservation(): void
+    {
+        $offer = $this->offer($this->store());
+        $this->actingAs($this->customer());
+
+        $code = Livewire::test('customer.browse')
+            ->call('reserve', $offer->id, 1)
+            ->get('reservedCode');
+
+        $other = User::create([
+            'name' => 'Omar',
+            'email' => 'omar@example.test',
+            'password' => bcrypt('secret'),
+            'role' => UserRole::Customer,
+        ]);
+        $this->actingAs($other);
+
+        Livewire::test('customer.reservations')->assertDontSee($code);
+    }
+
+    public function test_cancelling_from_my_codes_returns_the_stock(): void
+    {
+        $offer = $this->offer($this->store());
+        $customer = $this->customer();
+        $this->actingAs($customer);
+
+        Livewire::test('customer.browse')->call('reserve', $offer->id, 2);
+        $this->assertSame(98, $offer->fresh()->remaining);
+
+        $reservation = $customer->reservations()->sole();
+
+        Livewire::test('customer.reservations')
+            ->call('cancel', $reservation->id)
+            ->assertSee('Cancelled');
+
+        $this->assertSame(100, $offer->fresh()->remaining);
+        $this->assertSame(ReservationStatus::Cancelled, $reservation->fresh()->status);
+    }
+
+    public function test_my_codes_is_empty_before_reserving_anything(): void
+    {
+        $this->actingAs($this->customer());
+
+        Livewire::test('customer.reservations')->assertSee('No codes yet');
+    }
+
     public function test_an_unknown_code_at_the_till_reports_the_reason(): void
     {
         $store = $this->store();

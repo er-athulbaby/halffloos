@@ -10,10 +10,20 @@ use App\Rules\AtLeastHalfOff;
 use App\Support\Money;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new class extends Component
 {
+    use WithFileUploads;
+
     public Store $store;
+
+    /**
+     * Resized in the browser before it ever reaches us — this PHP build has no
+     * gd or imagick, and nobody should push a 4MB phone photo over Bahraini
+     * mobile data to list a loaf of bread.
+     */
+    public $photo = null;
 
     public string $title = '';
     public string $category = 'pantry';
@@ -41,6 +51,7 @@ new class extends Component
     {
         $this->title = '';
         $this->category = 'pantry';
+        $this->photo = null;
         $this->barcode = null;
         $this->recognised = null;
         $this->retail_value = '';
@@ -98,6 +109,7 @@ new class extends Component
         $this->validate([
             'title' => ['required', 'string', 'max:120'],
             'category' => ['required', Rule::enum(OfferCategory::class)],
+            'photo' => ['nullable', 'image', 'max:2048'],
             'barcode' => ['nullable', 'string', 'max:64'],
             'expires_on' => ['required', 'date', 'after_or_equal:today'],
             'retail_value' => $money,
@@ -124,6 +136,7 @@ new class extends Component
             'type' => OfferType::Item,
             'title' => $this->title,
             'category' => $this->category,
+            'image' => $this->photo?->store('offers', 'public'),
             'barcode' => $this->barcode,
             'retail_value_fils' => Money::fromString($this->retail_value),
             'price_fils' => Money::fromString($this->price),
@@ -228,6 +241,31 @@ new class extends Component
         </div>
 
         <div>
+            <label for="photo" class="block text-sm font-medium">
+                {{ __('Photo') }} <span class="font-normal text-muted-foreground">{{ __('(optional)') }}</span>
+            </label>
+            <div class="mt-1 flex items-center gap-3">
+                @if ($photo)
+                    <img src="{{ $photo->temporaryUrl() }}" alt="" class="size-16 rounded-xl object-cover">
+                @else
+                    <div class="flex size-16 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                        <x-icon name="camera" class="size-6" />
+                    </div>
+                @endif
+
+                <label class="flex min-h-11 cursor-pointer items-center rounded-lg border border-border-subtle
+                              px-4 text-sm font-medium focus-within:ring-2 focus-within:ring-primary">
+                    <input id="photo" type="file" wire:model="photo" accept="image/*" capture="environment" class="sr-only">
+                    <span wire:loading.remove wire:target="photo">
+                        {{ $photo ? __('Change photo') : __('Take a photo') }}
+                    </span>
+                    <span wire:loading wire:target="photo">{{ __('Uploading…') }}</span>
+                </label>
+            </div>
+            @error('photo') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
+        </div>
+
+        <div>
             <label for="category" class="block text-sm font-medium">{{ __('Category') }}</label>
             <select id="category" wire:model="category"
                     class="mt-1 block min-h-11 w-full rounded-lg border border-border-subtle bg-card px-3
@@ -315,18 +353,19 @@ new class extends Component
         <h2 class="text-sm font-bold uppercase tracking-wide text-muted-foreground">{{ __('Live now') }}</h2>
 
         @forelse ($live as $offer)
-            <div class="mt-2 flex items-center justify-between rounded-xl bg-card p-3 shadow-sm">
-                <div class="min-w-0">
+            <div class="mt-2 flex items-center gap-3 rounded-xl border border-border-subtle bg-card p-3">
+                <x-offer-image :offer="$offer" size="size-14" />
+                <div class="min-w-0 flex-1">
                     <p class="truncate font-medium">{{ $offer->title }}</p>
-                    <p class="text-sm text-muted-foreground tabular-nums">
-                        <span class="line-through">{{ $offer->retail_value_fils->format() }}</span>
+                    <p class="text-sm tabular-nums">
                         <span class="font-bold text-primary">{{ $offer->price_fils->format() }}</span>
-                        · {{ __('collect by :time', ['time' => $offer->pickup_end->format('H:i')]) }}
+                        <span class="text-muted-foreground line-through">{{ $offer->retail_value_fils->toDecimal() }}</span>
+                        <span class="text-muted-foreground">· {{ $offer->pickup_end->format('H:i') }}</span>
                     </p>
                 </div>
-                <div class="ms-3 shrink-0 text-end">
+                <div class="shrink-0 text-end">
                     <p class="text-lg font-bold tabular-nums">{{ $offer->remaining }}</p>
-                    <p class="text-xs text-muted-foreground">{{ __('of :total left', ['total' => $offer->quantity]) }}</p>
+                    <p class="text-xs text-muted-foreground">{{ __('of :total', ['total' => $offer->quantity]) }}</p>
                 </div>
             </div>
         @empty

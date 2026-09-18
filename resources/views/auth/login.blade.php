@@ -40,8 +40,14 @@
             </button>
         </form>
 
-        <p class="mt-6 text-sm text-muted-foreground">
-            {{ __('Shops are added by Halffloos after we check your CR and food licence. Contact us to get set up.') }}
+        <p class="mt-6 text-sm">
+            <a href="{{ route('register') }}" class="font-medium text-primary underline underline-offset-4">
+                {{ __('New here? Create an account') }}
+            </a>
+        </p>
+
+        <p class="mt-4 text-sm text-muted-foreground">
+            {{ __('Running a shop? Shops are added by Halffloos after we check your CR and food licence. Contact us to get set up.') }}
         </p>
     </div>
 </x-layouts.app>

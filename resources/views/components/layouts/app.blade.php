@@ -12,13 +12,28 @@
 </head>
 <body class="min-h-dvh bg-background text-foreground font-sans antialiased">
     @auth
+        @php($isMerchant = auth()->user()->role === \App\Enums\UserRole::Merchant)
         <header class="bg-primary text-on-primary">
             <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-                <a href="{{ route('merchant.stock') }}" class="text-lg font-bold tracking-tight">
+                <a href="{{ route($isMerchant ? 'merchant.stock' : 'browse') }}"
+                   class="text-lg font-bold tracking-tight">
                     {{ __('Halffloos') }}
                 </a>
                 <div class="flex items-center gap-3 text-sm">
-                    <span class="hidden sm:inline">{{ auth()->user()->name }}</span>
+                    @if ($isMerchant)
+                        <nav class="flex items-center gap-3">
+                            <a href="{{ route('merchant.stock') }}"
+                               @class(['underline underline-offset-4' => request()->routeIs('merchant.stock')])>
+                                {{ __('List stock') }}
+                            </a>
+                            <a href="{{ route('merchant.till') }}"
+                               @class(['underline underline-offset-4' => request()->routeIs('merchant.till')])>
+                                {{ __('Collections') }}
+                            </a>
+                        </nav>
+                    @else
+                        <span class="hidden sm:inline">{{ auth()->user()->name }}</span>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="button" onclick="this.form.submit()"

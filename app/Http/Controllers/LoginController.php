@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -53,7 +55,15 @@ class LoginController extends Controller
         RateLimiter::clear($key);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('merchant.stock'));
+        return redirect()->intended($this->homeFor($request->user()));
+    }
+
+    /** Merchants land on their listing screen, everyone else on browse. */
+    private function homeFor(?User $user): string
+    {
+        return $user?->role === UserRole::Merchant
+            ? route('merchant.stock')
+            : route('browse');
     }
 
     public function destroy(Request $request): RedirectResponse

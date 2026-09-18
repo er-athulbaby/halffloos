@@ -97,4 +97,66 @@ class MerchantListStockTest extends TestCase
     {
         $this->get(route('merchant.stock'))->assertRedirect(route('login'));
     }
+
+    public function test_scanning_a_familiar_barcode_fills_the_whole_form(): void
+    {
+        $user = $this->merchant();
+        $this->actingAs($user);
+
+        $this->form(Livewire::test('merchant.list-stock'), '0.500')
+            ->set('barcode', '6281006')
+            ->call('save');
+
+        Livewire::test('merchant.list-stock')
+            ->call('scanned', '6281006')
+            ->assertSet('title', 'Fresh milk 1L')
+            ->assertSet('retail_value', '2.000')
+            ->assertSet('price', '0.500')
+            ->assertSet('quantity', 100)
+            ->assertSet('recognised', 'Fresh milk 1L');
+    }
+
+    public function test_scanning_an_unfamiliar_barcode_only_records_the_number(): void
+    {
+        $this->actingAs($this->merchant());
+
+        Livewire::test('merchant.list-stock')
+            ->call('scanned', '9999999')
+            ->assertSet('barcode', '9999999')
+            ->assertSet('recognised', null)
+            ->assertSet('title', '');
+    }
+
+    public function test_it_does_not_recognise_another_shops_barcode(): void
+    {
+        $this->actingAs($this->merchant());
+        $this->form(Livewire::test('merchant.list-stock'), '0.500')
+            ->set('barcode', '6281006')
+            ->call('save');
+
+        $other = User::create([
+            'name' => 'Other Merchant',
+            'email' => 'other@example.test',
+            'password' => bcrypt('secret'),
+            'role' => UserRole::Merchant,
+        ]);
+        Store::create([
+            'user_id' => $other->id,
+            'name' => 'Riffa Mini Mart',
+            'area' => 'Riffa',
+            'lat' => 26.13,
+            'lng' => 50.55,
+            'phone' => '17000000',
+            'cr_number' => '998877-1',
+            'food_licence_no' => 'MOH-BH-1122',
+            'status' => StoreStatus::Approved,
+        ]);
+
+        $this->actingAs($other);
+
+        Livewire::test('merchant.list-stock')
+            ->call('scanned', '6281006')
+            ->assertSet('recognised', null)
+            ->assertSet('title', '');
+    }
 }

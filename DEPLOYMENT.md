@@ -76,3 +76,18 @@ with no extensions directory. These three cannot be enabled. Consequences:
 If the production host uses a different PHP build that does have these
 extensions, nothing breaks — but do not add server-side image processing on the
 assumption that every environment has it.
+
+## HTTPS is required for barcode scanning
+
+The merchant listing screen scans barcodes through `getUserMedia`, which browsers
+only expose on a secure origin. `localhost` counts as secure, so development works
+over plain HTTP — production does not.
+
+Served over HTTP, the camera request fails and the screen falls back to its "No
+camera available. Type the details instead." message. That is a graceful failure,
+not a visible error, so it will not show up in logs or error tracking. If merchants
+report that scanning "does nothing", check the certificate first.
+
+The scanner uses the browser's own `BarcodeDetector` where it exists (Chrome on
+Android) and a ZXing WebAssembly fallback elsewhere (Safari, iOS). The wasm is only
+downloaded on browsers that need it.

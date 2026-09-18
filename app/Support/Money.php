@@ -37,9 +37,15 @@ final readonly class Money
         return $this->fils;
     }
 
+    /** "2.500" — the bare amount, for round-tripping into a form field. */
+    public function toDecimal(): string
+    {
+        return sprintf('%d.%03d', intdiv($this->fils, 1000), $this->fils % 1000);
+    }
+
     public function format(): string
     {
-        return sprintf('BHD %d.%03d', intdiv($this->fils, 1000), $this->fils % 1000);
+        return 'BHD '.$this->toDecimal();
     }
 
     public function isAtMostHalfOf(self $other): bool

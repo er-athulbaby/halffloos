@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OfferCategory;
 use App\Enums\OfferStatus;
 use App\Enums\OfferType;
 use App\Enums\StoreStatus;
@@ -7,6 +8,7 @@ use App\Models\Offer;
 use App\Models\Store;
 use App\Rules\AtLeastHalfOff;
 use App\Support\Money;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 new class extends Component
@@ -14,6 +16,7 @@ new class extends Component
     public Store $store;
 
     public string $title = '';
+    public string $category = 'pantry';
     public ?string $barcode = null;
     public string $expires_on = '';
     public string $retail_value = '';
@@ -37,6 +40,7 @@ new class extends Component
     public function resetForm(): void
     {
         $this->title = '';
+        $this->category = 'pantry';
         $this->barcode = null;
         $this->recognised = null;
         $this->retail_value = '';
@@ -67,6 +71,7 @@ new class extends Component
         }
 
         $this->title = $previous->title;
+        $this->category = $previous->category->value;
         $this->retail_value = $previous->retail_value_fils->toDecimal();
         $this->price = $previous->price_fils->toDecimal();
         $this->quantity = $previous->quantity;
@@ -92,6 +97,7 @@ new class extends Component
 
         $this->validate([
             'title' => ['required', 'string', 'max:120'],
+            'category' => ['required', Rule::enum(OfferCategory::class)],
             'barcode' => ['nullable', 'string', 'max:64'],
             'expires_on' => ['required', 'date', 'after_or_equal:today'],
             'retail_value' => $money,
@@ -117,6 +123,7 @@ new class extends Component
             'store_id' => $this->store->id,
             'type' => OfferType::Item,
             'title' => $this->title,
+            'category' => $this->category,
             'barcode' => $this->barcode,
             'retail_value_fils' => Money::fromString($this->retail_value),
             'price_fils' => Money::fromString($this->price),
@@ -138,6 +145,7 @@ new class extends Component
         $previous = $this->store->offers()->whereKey($offerId)->firstOrFail();
 
         $this->title = $previous->title;
+        $this->category = $previous->category->value;
         $this->barcode = $previous->barcode;
         $this->retail_value = $previous->retail_value_fils->toDecimal();
         $this->price = $previous->price_fils->toDecimal();
@@ -149,6 +157,7 @@ new class extends Component
     public function with(): array
     {
         return [
+            'categories' => OfferCategory::cases(),
             'live' => $this->store->offers()
                 ->whereIn('status', [OfferStatus::Active, OfferStatus::SoldOut])
                 ->orderByDesc('id')
@@ -216,6 +225,21 @@ new class extends Component
                    class="mt-1 block min-h-11 w-full rounded-lg border border-border-subtle px-3
                           focus:border-primary focus:ring-2 focus:ring-primary">
             @error('title') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
+        </div>
+
+        <div>
+            <label for="category" class="block text-sm font-medium">{{ __('Category') }}</label>
+            <select id="category" wire:model="category"
+                    class="mt-1 block min-h-11 w-full rounded-lg border border-border-subtle bg-card px-3
+                           focus:border-primary focus:ring-2 focus:ring-primary">
+                @foreach ($categories as $case)
+                    <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                @endforeach
+            </select>
+            @error('category') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
+            <p class="mt-1 text-xs text-muted-foreground">
+                {{ __('Raw meat, poultry and fish cannot be listed on Halffloos yet.') }}
+            </p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OfferCategory;
 use App\Enums\OfferStatus;
 use App\Enums\OfferType;
 use App\Enums\ReservationStatus;
@@ -153,6 +154,56 @@ class CustomerFlowTest extends TestCase
     public function test_browse_requires_a_login(): void
     {
         $this->get(route('browse'))->assertRedirect(route('login'));
+    }
+
+    public function test_a_category_chip_filters_the_list(): void
+    {
+        $store = $this->store();
+        $this->offer($store, ['title' => 'Sourdough loaf', 'category' => OfferCategory::Bakery]);
+        $this->offer($store, ['title' => 'Fresh milk 1L', 'category' => OfferCategory::Dairy]);
+        $this->actingAs($this->customer());
+
+        Livewire::test('customer.browse')
+            ->call('filterBy', 'bakery')
+            ->assertSee('Sourdough loaf')
+            ->assertDontSee('Fresh milk 1L');
+    }
+
+    public function test_tapping_the_same_chip_again_clears_the_filter(): void
+    {
+        $store = $this->store();
+        $this->offer($store, ['title' => 'Fresh milk 1L', 'category' => OfferCategory::Dairy]);
+        $this->actingAs($this->customer());
+
+        Livewire::test('customer.browse')
+            ->call('filterBy', 'bakery')
+            ->assertDontSee('Fresh milk 1L')
+            ->call('filterBy', 'bakery')
+            ->assertSet('category', null)
+            ->assertSee('Fresh milk 1L');
+    }
+
+    public function test_search_matches_the_item_name(): void
+    {
+        $store = $this->store();
+        $this->offer($store, ['title' => 'Sourdough loaf', 'category' => OfferCategory::Bakery]);
+        $this->offer($store, ['title' => 'Fresh milk 1L', 'category' => OfferCategory::Dairy]);
+        $this->actingAs($this->customer());
+
+        Livewire::test('customer.browse')
+            ->set('search', 'sourdough')
+            ->assertSee('Sourdough loaf')
+            ->assertDontSee('Fresh milk 1L');
+    }
+
+    public function test_search_matches_the_shop_name(): void
+    {
+        $this->offer($this->store(), ['title' => 'Fresh milk 1L']);
+        $this->actingAs($this->customer());
+
+        Livewire::test('customer.browse')
+            ->set('search', 'Hidd Cold')
+            ->assertSee('Fresh milk 1L');
     }
 
     public function test_a_merchant_collects_by_code_and_sees_what_to_hand_over(): void

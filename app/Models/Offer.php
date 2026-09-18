@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\OfferCategory;
 use App\Enums\OfferStatus;
 use App\Enums\OfferType;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ class Offer extends Model
     {
         return [
             'type' => OfferType::class,
+            'category' => OfferCategory::class,
             'status' => OfferStatus::class,
             'retail_value_fils' => MoneyCast::class,
             'price_fils' => MoneyCast::class,

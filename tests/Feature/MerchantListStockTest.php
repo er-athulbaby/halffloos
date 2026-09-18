@@ -64,6 +64,38 @@ class MerchantListStockTest extends TestCase
         $this->assertSame(100, $offer->remaining);
     }
 
+    /**
+     * The spec excludes raw meat, poultry and fish from v1 on liability grounds.
+     * Until offers had a category column that was a policy a human applied at
+     * approval time; now there is no case to list them under and validation
+     * rejects the attempt.
+     */
+    public function test_raw_protein_cannot_be_listed(): void
+    {
+        $this->actingAs($this->merchant());
+
+        foreach (['meat', 'poultry', 'fish', 'seafood'] as $attempt) {
+            $this->form(Livewire::test('merchant.list-stock'), '0.500')
+                ->set('category', $attempt)
+                ->call('save')
+                ->assertHasErrors('category');
+        }
+
+        $this->assertSame(0, Offer::count());
+    }
+
+    public function test_a_listing_records_its_category(): void
+    {
+        $this->actingAs($this->merchant());
+
+        $this->form(Livewire::test('merchant.list-stock'), '0.500')
+            ->set('category', 'bakery')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(\App\Enums\OfferCategory::Bakery, Offer::sole()->category);
+    }
+
     public function test_it_rejects_a_discount_under_fifty_percent(): void
     {
         $this->actingAs($this->merchant());

@@ -2,10 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Enums\OfferCategory;
+use App\Enums\OfferStatus;
+use App\Enums\OfferType;
 use App\Enums\StoreStatus;
 use App\Enums\UserRole;
+use App\Models\Offer;
 use App\Models\Store;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -31,7 +36,7 @@ class DemoUsersSeeder extends Seeder
 
         $merchant = $this->user('merchant@halffloos.test', 'Ali Hassan', UserRole::Merchant, '17456789');
 
-        Store::firstOrCreate(
+        $store = Store::firstOrCreate(
             ['cr_number' => '112233-1'],
             [
                 'user_id' => $merchant->id,
@@ -48,8 +53,63 @@ class DemoUsersSeeder extends Seeder
             ]
         );
 
+        $baker = $this->user('bakery@halffloos.test', 'Yusuf Rahman', UserRole::Merchant, '17223344');
+
+        $bakery = Store::firstOrCreate(
+            ['cr_number' => '445566-1'],
+            [
+                'user_id' => $baker->id,
+                'name' => 'Adliya Bakery',
+                'name_ar' => 'مخبز العدلية',
+                'area' => 'Adliya',
+                'lat' => 26.2100,
+                'lng' => 50.5900,
+                'phone' => '17223344',
+                'food_licence_no' => 'MOH-BH-4455',
+                'status' => StoreStatus::Approved,
+                'verified_at' => now(),
+            ]
+        );
+
         $this->user('fatima@halffloos.test', 'Fatima', UserRole::Customer, '36123456');
         $this->user('admin@halffloos.test', 'Halffloos Admin', UserRole::Admin);
+
+        $this->offers($store, [
+            ['Fresh milk 1L', OfferCategory::Dairy, '2.000', '0.500', 40],
+            ['Greek yoghurt 500g', OfferCategory::Dairy, '1.200', '0.400', 18],
+            ['Bananas 1kg', OfferCategory::Produce, '0.900', '0.300', 25],
+            ['Orange juice 1L', OfferCategory::Drinks, '1.500', '0.600', 12],
+            ['Basmati rice 2kg', OfferCategory::Pantry, '3.200', '1.500', 8],
+        ]);
+
+        $this->offers($bakery, [
+            ['Croissants, box of 6', OfferCategory::Bakery, '2.400', '0.800', 10],
+            ['Sourdough loaf', OfferCategory::Bakery, '1.800', '0.500', 6],
+            ['Chicken sandwich', OfferCategory::Meals, '1.600', '0.700', 14],
+        ]);
+    }
+
+    /** @param  array<int, array{0:string,1:OfferCategory,2:string,3:string,4:int}>  $rows */
+    private function offers(Store $store, array $rows): void
+    {
+        foreach ($rows as [$title, $category, $retail, $price, $qty]) {
+            Offer::firstOrCreate(
+                ['store_id' => $store->id, 'title' => $title],
+                [
+                    'type' => OfferType::Item,
+                    'category' => $category,
+                    'retail_value_fils' => Money::fromString($retail),
+                    'price_fils' => Money::fromString($price),
+                    'quantity' => $qty,
+                    'remaining' => $qty,
+                    'max_per_customer' => 2,
+                    'expires_on' => now()->addDay()->toDateString(),
+                    'pickup_start' => now()->subHour(),
+                    'pickup_end' => now()->addHours(4),
+                    'status' => OfferStatus::Active,
+                ]
+            );
+        }
 
         $this->command->newLine();
         $this->command->info('Demo accounts — password for all three is "'.self::PASSWORD.'"');

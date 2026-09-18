@@ -139,13 +139,52 @@ Photo-first, price-led. In order of visual weight:
 
 1. Product photo (reserve the box — no layout shift on load)
 2. **Price** in green, with the original struck through beside it
-3. Discount badge — "70% off" — this is the hook
-4. Expiry date, in amber when it's tomorrow
-5. Store name + verified badge
-6. Distance and pickup window
+3. Discount badge — "−70%" — overlaid on the image corner, this is the hook
+4. Expiry date, in amber when it is today or tomorrow
+5. Pickup window and remaining count, muted
+6. Reserve button, right-aligned on the same row
 
 Every card states the expiry date explicitly. Never hide it behind a tap. Hiding it
 is what makes people distrust the whole app.
+
+**The card is a single row, not a stack.** Four must fit a phone screen. An earlier
+build stacked the button under the metadata and fitted two, which made the list feel
+empty and the scroll endless.
+
+**Photography is not optional decoration — it is the first thing in the hierarchy.**
+When a shop has not uploaded a photo, show `<x-offer-image>`, which falls back to the
+category glyph on its category tint. A tinted glyph reads as designed; a grey box
+reads as broken.
+
+### Colour discipline
+
+Green is for **price and primary action only**. Not shop tiles, not headers, not
+section chrome. An earlier build made every surface green and the eye had nothing to
+land on — when everything is emphasised, nothing is.
+
+Cards are white on the mint background, bordered rather than shadowed. Amber marks
+expiry urgency. Red is errors only.
+
+### Category tints
+
+Each category owns a tint used for placeholder art, defined in
+`App\Enums\OfferCategory::tint()`. Distinct hues make a list scannable without
+reading it — dairy blue, produce lime, bakery amber, drinks violet.
+
+### Icons
+
+**Phosphor Icons**, regular weight, MIT licensed, committed to `resources/svg/` and
+inlined by `<x-icon name="...">`. Never emoji. Never hand-drawn paths — an earlier
+build authored its own SVG path data and it looked crude beside real typography.
+
+### Navigation
+
+Bottom navigation, thumb-reachable, respecting `env(safe-area-inset-bottom)`. Two
+items per role: customers get Browse and My codes, merchants get List stock and
+Collect. Never more than five.
+
+The header is deliberately quiet — small wordmark, sign out, nothing else. The
+screen's own heading carries the page.
 
 ### Merchant listing screen
 

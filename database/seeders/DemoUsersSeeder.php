@@ -71,6 +71,25 @@ class DemoUsersSeeder extends Seeder
             ]
         );
 
+        // A shop still waiting on its CR and food-licence check, so the admin
+        // approval queue is not empty in a demo.
+        $applicant = $this->user('seef@halffloos.test', 'Mariam Al Khalifa', UserRole::Merchant, '17889900');
+
+        Store::firstOrCreate(
+            ['cr_number' => '778899-1'],
+            [
+                'user_id' => $applicant->id,
+                'name' => 'Seef Fresh Market',
+                'name_ar' => 'سوق السيف الطازج',
+                'area' => 'Seef',
+                'lat' => 26.2360,
+                'lng' => 50.5440,
+                'phone' => '17889900',
+                'food_licence_no' => 'MOH-BH-7788',
+                'status' => StoreStatus::Pending,
+            ]
+        );
+
         $this->user('fatima@halffloos.test', 'Fatima', UserRole::Customer, '36123456');
         $this->user('admin@halffloos.test', 'Halffloos Admin', UserRole::Admin);
 

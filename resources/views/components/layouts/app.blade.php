@@ -4,15 +4,21 @@
     $user = auth()->user();
     $isMerchant = $user?->role === \App\Enums\UserRole::Merchant;
 
-    $tabs = $user === null ? [] : ($isMerchant
-        ? [
+    $tabs = match ($user?->role) {
+        \App\Enums\UserRole::Merchant => [
             ['route' => 'merchant.stock', 'icon' => 'list-plus', 'label' => __('List stock')],
             ['route' => 'merchant.till', 'icon' => 'barcode', 'label' => __('Collect')],
-        ]
-        : [
+        ],
+        \App\Enums\UserRole::Admin => [
+            ['route' => 'admin.shops', 'icon' => 'storefront', 'label' => __('Shops')],
+            ['route' => 'browse', 'icon' => 'shopping-bag', 'label' => __('Browse')],
+        ],
+        \App\Enums\UserRole::Customer => [
             ['route' => 'browse', 'icon' => 'storefront', 'label' => __('Browse')],
             ['route' => 'reservations', 'icon' => 'ticket', 'label' => __('My codes')],
-        ]);
+        ],
+        default => [],
+    };
 @endphp
 
 <!DOCTYPE html>

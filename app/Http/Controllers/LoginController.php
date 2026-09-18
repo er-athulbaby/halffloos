@@ -58,12 +58,14 @@ class LoginController extends Controller
         return redirect()->intended($this->homeFor($request->user()));
     }
 
-    /** Merchants land on their listing screen, everyone else on browse. */
+    /** Each role lands on the screen it actually works in. */
     private function homeFor(?User $user): string
     {
-        return $user?->role === UserRole::Merchant
-            ? route('merchant.stock')
-            : route('browse');
+        return match ($user?->role) {
+            UserRole::Merchant => route('merchant.stock'),
+            UserRole::Admin => route('admin.shops'),
+            default => route('browse'),
+        };
     }
 
     public function destroy(Request $request): RedirectResponse

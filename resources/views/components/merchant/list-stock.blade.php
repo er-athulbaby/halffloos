@@ -314,7 +314,8 @@ new class extends Component
             </p>
         @endif
 
-        <div class="grid grid-cols-3 gap-3">
+        {{-- Two columns at phone width: three truncates the date and time fields. --}}
+        <div class="grid grid-cols-2 gap-3">
             <div>
                 <label for="quantity" class="block text-sm font-medium">{{ __('How many') }}</label>
                 <input id="quantity" type="number" min="1" inputmode="numeric" wire:model="quantity"
@@ -331,7 +332,7 @@ new class extends Component
                 @error('expires_on') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
             </div>
 
-            <div>
+            <div class="col-span-2">
                 <label for="pickup" class="block text-sm font-medium">{{ __('Collect by') }}</label>
                 <input id="pickup" type="time" wire:model="pickup_end"
                        class="mt-1 block min-h-11 w-full rounded-lg border border-border-subtle px-3

@@ -21,6 +21,9 @@ Route::middleware('auth')->group(function () {
     Route::view('/browse', 'customer.browse')->name('browse');
     Route::view('/my-codes', 'customer.reservations')->name('reservations');
 
+    // Admin approval. The role gate lives in the component's mount().
+    Route::view('/admin/shops', 'admin.shops')->name('admin.shops');
+
     // Approval is checked in each component's mount(), where the store is
     // resolved anyway -- two routes do not warrant a middleware class.
     Route::view('/stock', 'merchant.stock')->name('merchant.stock');

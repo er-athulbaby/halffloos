@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Behind a tunnel or load balancer the TLS terminates upstream, so
+        // without this Laravel sees plain HTTP and generates http:// links —
+        // which browsers then block as mixed content, taking Livewire with them.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
